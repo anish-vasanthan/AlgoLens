@@ -79,4 +79,9 @@ export async function checkUsername(username) {
   }
 }
 
+export async function signInByUsername(username, deviceId) {
+  const { data } = await api.get(`/users/signin/${encodeURIComponent(username)}`, { params: { deviceId } })
+  return data // { user }
+}
+
 export default api

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-import { saveUserProfile, getUserProfile } from '../lib/api'
+import { saveUserProfile, getUserProfile, signInByUsername } from '../lib/api'
 
 const UserContext = createContext(null)
 
@@ -85,8 +85,22 @@ export function UserProvider({ children }) {
     setProfile(false)
   }
 
+  /** signIn — look up existing account by username, reassign to this device */
+  const signIn = async (username) => {
+    const deviceId = getOrCreateDeviceId()
+    const { user } = await signInByUsername(username.trim(), deviceId)
+    const p = {
+      username:    user.name,
+      displayName: user.display_name || user.name,
+      role:        user.role,
+      id:          user.id,
+    }
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(p))
+    setProfile(p)
+  }
+
   return (
-    <UserContext.Provider value={{ profile, saveProfile, editProfile, closeEdit, editing, logout }}>
+    <UserContext.Provider value={{ profile, saveProfile, signIn, editProfile, closeEdit, editing, logout }}>
       {children}
     </UserContext.Provider>
   )

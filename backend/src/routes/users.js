@@ -98,6 +98,37 @@ router.get('/check/:username', async (req, res, next) => {
   }
 })
 
+// ── GET /api/users/signin/:username — sign in by username ────────────────────
+// Looks up account by username, reassigns it to the current device.
+router.get('/signin/:username', async (req, res, next) => {
+  try {
+    const username = req.params.username?.trim()
+    const deviceId = req.query.deviceId
+
+    if (!username) return res.status(400).json({ error: 'Username is required' })
+    if (!deviceId) return res.status(400).json({ error: 'deviceId is required' })
+
+    const { data: user, error } = await supabase
+      .from('app_users')
+      .select('id, name, display_name, role, device_id, created_at')
+      .eq('name', username)
+      .maybeSingle()
+
+    if (error) throw error
+    if (!user) return res.status(404).json({ error: 'Username not found. Check your username or create a new account.' })
+
+    // Re-associate this device with the account (allows signing in from a new device)
+    await supabase
+      .from('app_users')
+      .update({ device_id: deviceId, updated_at: new Date().toISOString() })
+      .eq('id', user.id)
+
+    res.json({ user: { ...user, device_id: deviceId } })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // ── GET /api/users/:deviceId — fetch profile by device ───────────────────────
 router.get('/:deviceId', async (req, res, next) => {
   try {
